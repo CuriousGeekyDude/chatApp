@@ -1,0 +1,1 @@
+#define socketPathName "/home/feri/Desktop"

@@ -6,10 +6,15 @@
 #include "error_functions.c"
 #define socketPathName "/home/feri/Desktop/sockets"
 
+void initializeBuffer(char* buffer, size_t sizeOfBuffer) {
+    for(size_t i = 0; i < sizeOfBuffer; ++i)
+        buffer[i] = '\0';
+}
+
 
 int main(int argc, char* argv[]) 
 {
-    char buffer[100], *serverBuff = "client: ";
+    char buffer[100];
     struct sockaddr_un addr;
     int fd, bindResult, acceptResultfd, numRead;
     addr.sun_family = AF_UNIX;
@@ -32,13 +37,20 @@ int main(int argc, char* argv[])
 
     if(acceptResultfd > 0)
         printf("client connected\n");
+
+    printf("client: ");
+    fflush(stdout);
     while(numRead = read(acceptResultfd, buffer, 100) > 0) {
-        printf("%s", serverBuff);
-        fflush(stdout);
         write(STDOUT_FILENO, buffer, 100);
         fflush(stdout);
-        for(size_t i = 0; i <= 99; ++i)
-            buffer[i] = '\0';
+        initializeBuffer(buffer, 100);
+
+        printf("server: ");
+        fflush(stdout); 
+        read(STDIN_FILENO, buffer, 100);                   
+        write(acceptResultfd, buffer, 100);
+        printf("client: ");
+        fflush(stdout);
     }
 
     close(acceptResultfd);
