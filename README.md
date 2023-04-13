@@ -1,2 +1,2 @@
-# chatApp
-Hobby projects that is about implementing a rather primitive chat application using sockets in the Unix domain. I also implemented multithreading concepts in it, in order to make sure that it does not slow down when simultaneously faced with thousands of clients.
+#Client-server App
+Hobby projects that is about implementing a rather primitive chat application between a client and a server using stream sockets in UNIX domain. It is worth noting that its capabilities are quite limited; the server can only handle one client at a time.
