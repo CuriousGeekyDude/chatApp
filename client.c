@@ -1,11 +1,11 @@
-#include <sys/socket.h>
-#include <sys/un.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <string.h>
-#include <pthread.h>
-#include "error_functions.c"
 #include "path.c"
+
+static sigjmp_buf env;
+
+void sigIntHandler(int sig) {
+    siglongjmp(env, 1);
+
+}
 
 
 int main(int argc, char* argv[])
@@ -13,6 +13,12 @@ int main(int argc, char* argv[])
     int fd, connectResult;
     pthread_t WriteThread;
     struct sockaddr_un addr;
+    struct sigaction signalStructure;
+
+    memset(&signalStructure, 0, sizeof(struct sigaction));
+    signalStructure.sa_handler = &sigIntHandler;
+    if(sigaction(SIGINT, &signalStructure, NULL) == -1)
+        errExit("sigaction");
 
 
 /*The client first initializes the sockaddr_un structure
@@ -35,16 +41,25 @@ We should only exchange one message at a time. Otherwise when
 we register a message that we are not prompted to do, we 
 run the risk of intermingling our messages with that of the server's.*/
 
+    switch(sigsetjmp(env, 1)) {
  
-    int threadCreatRes;
-    threadCreatRes = pthread_create(&WriteThread, NULL, &startThread, &fd);
-    if(threadCreatRes != 0)
-        errExitEN(threadCreatRes, "pthread_create"); 
+    case 0:
+        int threadCreatRes;
+        threadCreatRes = pthread_create(&WriteThread, NULL, &startThread, &fd);
+        if(threadCreatRes != 0)
+            errExitEN(threadCreatRes, "pthread_create"); 
 
-    while(read(STDIN_FILENO, buffer, BuffSize) > 0) {
-        write(fd, buffer, BuffSize);
-        initializeBuffer(buffer, BuffSize);
+        while(read(STDIN_FILENO, buffer, BuffSize) > 0) {
+            write(fd, buffer, BuffSize);
+            initializeBuffer(buffer, BuffSize);
+        }
+    break;
+
+    default:
+        close(fd);
+        printf("\nclient closed\n");
+        fflush(stdout);
+        break;
     }
-    close(fd);
     exit(EXIT_SUCCESS);
 }

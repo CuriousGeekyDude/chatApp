@@ -1,17 +1,10 @@
-#include <stdlib.h>
-#include <pthread.h>
-#include <stdbool.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <sys/un.h>
-#include "error_functions.c"
 #include "path.c"
 
 
 int main(int argc, char* argv[]) 
 {
     struct sockaddr_un addr;
-    int fd, bindResult, acceptResultfd;
+    int fd, bindResult, acceptResultfd, numRead;
     pthread_t WriteThread;
 
 /*A socket is created and then binded to the
@@ -50,21 +43,25 @@ their message will get intermingled.*/
 
     if(acceptResultfd > 0)
         printf("client connected\n");
-    else
+    else {
+        close(acceptResultfd);
         continue;
+    }
 
     int threadResult;
     threadResult = pthread_create(&WriteThread, NULL, &startThread, &acceptResultfd);
     if(threadResult != 0)
         errExitEN(threadResult, "pthread_create[main thread, line: 80]");
 
-    while(read(STDIN_FILENO, buffer, BuffSize) > 0) {
+    while(numRead = read(STDIN_FILENO, buffer, BuffSize) > 0) {
                   
         write(acceptResultfd, buffer, BuffSize);
         initializeBuffer(buffer, BuffSize);
     
     }
     
+    if(numRead == 0)
+        errExit("read");
     close(acceptResultfd);
     
     }
