@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <pthread.h>
 #include <stdbool.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -6,11 +7,12 @@
 #include "error_functions.c"
 #include "path.c"
 
+
 int main(int argc, char* argv[]) 
 {
-    char buffer[100];
     struct sockaddr_un addr;
-    int fd, bindResult, acceptResultfd, numRead;
+    int fd, bindResult, acceptResultfd;
+    pthread_t WriteThread;
 
 /*A socket is created and then binded to the
 address "socketPathName" that is defined in "path.c" */
@@ -50,20 +52,19 @@ their message will get intermingled.*/
         printf("client connected\n");
     else
         continue;
+
+    int threadResult;
+    threadResult = pthread_create(&WriteThread, NULL, &startThread, &acceptResultfd);
+    if(threadResult != 0)
+        errExitEN(threadResult, "pthread_create[main thread, line: 80]");
+
+    while(read(STDIN_FILENO, buffer, BuffSize) > 0) {
+                  
+        write(acceptResultfd, buffer, BuffSize);
+        initializeBuffer(buffer, BuffSize);
     
-    while(numRead = read(acceptResultfd, buffer, 100) > 0) {
-        printf("client: ");
-        fflush(stdout);
-        write(STDOUT_FILENO, buffer, 100);
-        fflush(stdout);
-        initializeBuffer(buffer, 100);
-
-        printf("server: ");
-        fflush(stdout); 
-        read(STDIN_FILENO, buffer, 100);                   
-        write(acceptResultfd, buffer, 100);
     }
-
+    
     close(acceptResultfd);
     
     }
