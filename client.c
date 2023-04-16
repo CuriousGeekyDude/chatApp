@@ -8,6 +8,28 @@ void sigIntHandler(int sig) {
 }
 
 
+void* clientThread(void* args) {
+    int numRead;
+    
+    while(numRead = read(*((int*) args), bufferThread, BuffSize) > 0) {
+        if(numRead == 0) {
+            printf("\nserver closed the connection!\n");
+            fflush(stdout);
+            break;
+        }
+        printf("server: ");
+        fflush(stdout);
+        if(write(STDOUT_FILENO, bufferThread, BuffSize) == -1)
+            errExit("write() of clientThread");
+        initializeBuffer(bufferThread, BuffSize);
+    }
+    if(numRead == -1)
+        errExit("read() of clientThread");
+    
+    pthread_exit(NULL);
+}
+
+
 int main(int argc, char* argv[])
 {
     int fd, connectResult;
@@ -21,9 +43,7 @@ int main(int argc, char* argv[])
         errExit("sigaction");
 
 
-/*The client first initializes the sockaddr_un structure
-to the address that the server is binded to: "socketPathName".
-That address is defined in "path.c" file.*/
+
 
     addr.sun_family = AF_UNIX;
     strncpy(addr.sun_path, socketPathName, sizeof(addr.sun_path)-1);
@@ -35,17 +55,12 @@ That address is defined in "path.c" file.*/
         break; 
     }
 
-/*If connect() was successful, then we will start exchanging 
-messages with the server. It is necessary that we start the conversation.
-We should only exchange one message at a time. Otherwise when 
-we register a message that we are not prompted to do, we 
-run the risk of intermingling our messages with that of the server's.*/
 
     switch(sigsetjmp(env, 1)) {
  
     case 0:
         int threadCreatRes;
-        threadCreatRes = pthread_create(&WriteThread, NULL, &startThread, &fd);
+        threadCreatRes = pthread_create(&WriteThread, NULL, &clientThread, &fd);
         if(threadCreatRes != 0)
             errExitEN(threadCreatRes, "pthread_create"); 
 
