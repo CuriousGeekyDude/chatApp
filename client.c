@@ -1,7 +1,6 @@
 #include "path.c"
 
 static sigjmp_buf env;
-static char buffer[BuffSize];
                 
 
 /*Signal handler for SIGINT*/
@@ -20,9 +19,8 @@ void sigIntHandler(int sig) {
 }
 
 
-/*Thread responsible for reading from the socket*/
 
-void* clientThread(void* args) {
+void* clientThreadListen(void* args) {
     int numRead;
     
     while(numRead = read(*((int*) args), bufferThread, BuffSize) > 0) {
@@ -57,9 +55,8 @@ int main(int argc, char* argv[])
         errExit("sigaction");
 
 
-/*Using abstract namespace linux-specific feature instead of explicit pathname*/
+/*Using abstract namespace linux-specific feature instead of explicit pathname for address*/
 
-    buffer[0] = '\0';
     addr.sun_family = AF_UNIX;
     strncpy(addr.sun_path+1, "socketAddress", sizeof(addr.sun_path)-2);
     fd = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -75,7 +72,7 @@ int main(int argc, char* argv[])
  
     case 0:
         int threadCreatRes;
-        threadCreatRes = pthread_create(&WriteThread, NULL, &clientThread, &fd);
+        threadCreatRes = pthread_create(&WriteThread, NULL, &clientThreadListen, &fd);
         if(threadCreatRes != 0)
             errExitEN(threadCreatRes, "pthread_create"); 
 

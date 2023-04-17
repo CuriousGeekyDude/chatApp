@@ -1,17 +1,16 @@
 #include "path.c"
 
 
-static char buffer[BuffSize];
 
-/*Return of accept() shared between serverThread and main thread
+
+/*Return of accept() shared between serverThreadListen and main thread
 for write and read on the socket created by serverThread each time 
 client closes the connection. */ 
 
 static int acceptResultfd; 
 
-/*Thread responsible for listening on the socket*/
 
-void* serverThread(void* args) {
+void* serverThreadListen(void* args) {
     
     int socketFd = *((int*)args), numRead;
 
@@ -55,7 +54,6 @@ int main(int argc, char* argv[])
 
 /*Using abstract namespaces linux-specific feature instead of explicit pathnames*/
 
-    buffer[0] = '\0';
     memset(&addr, 0, sizeof(struct sockaddr_un));
     addr.sun_family = AF_UNIX;
     strncpy(addr.sun_path + 1, "socketAddress", sizeof(addr.sun_path) - 2);
@@ -83,7 +81,7 @@ int main(int argc, char* argv[])
     else
         continue;
     
-    threadResult = pthread_create(&WriteThread, NULL, &serverThread, &fd);
+    threadResult = pthread_create(&WriteThread, NULL, &serverThreadListen, &fd);
     if(threadResult != 0)
         errExitEN(threadResult, "pthread_create[main thread, line: 80]");
 
@@ -96,7 +94,7 @@ int main(int argc, char* argv[])
     
     break;
     }
-    printf("error or read 0: read() of main thread line 69\n");
+    printf("error or read 0 bytes: read() of main thread\n");
     
     exit(EXIT_SUCCESS);
 

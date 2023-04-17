@@ -13,7 +13,7 @@
 
 
 static char bufferThread[BuffSize];
-
+static char buffer[BuffSize];
 
 
 void initializeBuffer(char* buffer, size_t sizeOfBuffer) {
