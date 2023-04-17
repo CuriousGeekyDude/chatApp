@@ -11,8 +11,10 @@
 #include <stdio.h>
 #include "error_functions.c"
 
-static char buffer[BuffSize];
+
 static char bufferThread[BuffSize];
+
+
 
 void initializeBuffer(char* buffer, size_t sizeOfBuffer) {
     for(size_t i = 0; i < sizeOfBuffer; ++i)

@@ -1,12 +1,26 @@
 #include "path.c"
 
 static sigjmp_buf env;
+static char buffer[BuffSize];
+                
+
+/*Signal handler for SIGINT*/
 
 void sigIntHandler(int sig) {
-    siglongjmp(env, 1);
+
+    /*Did not use longjmp() because of portability issues surrounding
+      signal masks. On some systems when SIGINT gets blocked before the 
+      call to the handler, it remains so after longjmp(), while on 
+      some systems it is removed. siglongjmp() gaurantees the removal on 
+      all systems.*/
+
+    siglongjmp(env, 1); 
+                        
 
 }
 
+
+/*Thread responsible for reading from the socket*/
 
 void* clientThread(void* args) {
     int numRead;
@@ -43,10 +57,11 @@ int main(int argc, char* argv[])
         errExit("sigaction");
 
 
+/*Using abstract namespace linux-specific feature instead of explicit pathname*/
 
-
+    buffer[0] = '\0';
     addr.sun_family = AF_UNIX;
-    strncpy(addr.sun_path, socketPathName, sizeof(addr.sun_path)-1);
+    strncpy(addr.sun_path+1, "socketAddress", sizeof(addr.sun_path)-2);
     fd = socket(AF_UNIX, SOCK_STREAM, 0);
 
     while(true) {

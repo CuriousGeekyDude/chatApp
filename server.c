@@ -1,6 +1,15 @@
 #include "path.c"
 
-static int acceptResultfd;
+
+static char buffer[BuffSize];
+
+/*Return of accept() shared between serverThread and main thread
+for write and read on the socket created by serverThread each time 
+client closes the connection. */ 
+
+static int acceptResultfd; 
+
+/*Thread responsible for listening on the socket*/
 
 void* serverThread(void* args) {
     
@@ -44,9 +53,13 @@ int main(int argc, char* argv[])
     int threadResult, fd, bindResult, numRead;;
     struct sockaddr_un addr;
 
+/*Using abstract namespaces linux-specific feature instead of explicit pathnames*/
+
+    buffer[0] = '\0';
+    memset(&addr, 0, sizeof(struct sockaddr_un));
     addr.sun_family = AF_UNIX;
-    strncpy(addr.sun_path, socketPathName, sizeof(addr.sun_path) - 1);
-    remove(socketPathName);
+    strncpy(addr.sun_path + 1, "socketAddress", sizeof(addr.sun_path) - 2);
+
     fd = socket(AF_UNIX, SOCK_STREAM, 0);
 
     if(fd == -1)
